@@ -1,0 +1,25 @@
+# Node.js dependencies
+/node_modules
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# dotenv environment variables file
+.env
+
+# Editor directories and files
+.idea
+.vscode
+*.sublime-project
+*.sublime-workspace
