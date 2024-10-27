@@ -19,7 +19,7 @@ Nodebird is a Node.js application that listens for UDP broadcasts from a DoorBir
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/yourusername/nodebird.git
+   git clone https://github.com/mettamatt/nodebird.git
    cd nodebird
    ```
 
@@ -31,7 +31,23 @@ Nodebird is a Node.js application that listens for UDP broadcasts from a DoorBir
 
 3. Configure your DoorBird credentials:
 
-   - Open `index.js` and replace `'192.168.x.x'`, `'your_username'`, and `'your_password'` with your DoorBird device's IP address and your user credentials.
+   - Create a `.env` file in the root of the project:
+   
+     ```bash
+     touch .env
+     ```
+
+   - Add your DoorBird device's IP address, username, and password to the `.env` file:
+
+     ```plaintext
+     DOORBIRD_IP=192.168.x.x
+     DOORBIRD_USERNAME=your_username
+     DOORBIRD_PASSWORD=your_password
+     ```
+
+   **Note:** Ensure the `.env` file is added to your `.gitignore` to keep your credentials secure and out of version control.
+
+4. Run the application.
 
 ## Usage
 
