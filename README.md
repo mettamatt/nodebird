@@ -1,6 +1,6 @@
 # Nodebird
 
-Nodebird is a Node.js application that listens for UDP broadcasts from a DoorBird video station, decrypts the messages using ChaCha20-Poly1305, and outputs event information such as doorbell rings or motion detection. See the [documentation](./docs/DoorBird UDP Event Packet Decryption Guide.md) for reference. 
+Nodebird is a Node.js application that listens for UDP broadcasts from a DoorBird video station, decrypts the messages using ChaCha20-Poly1305, and outputs event information such as doorbell rings or motion detection. See the [documentation](docs/DoorBird_UDP_Event_Packet_Decryption_Guide.md) for reference. 
 
 ## Features
 
