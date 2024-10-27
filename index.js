@@ -16,10 +16,12 @@ import sodium from 'libsodium-wrappers';
   const USERNAME = process.env.DOORBIRD_USERNAME;
   const PASSWORD = process.env.DOORBIRD_PASSWORD;
   const PORTS = [6524, 35344];
-  
+
   // Ensure required environment variables are set
   if (!DOORBIRD_IP || !USERNAME || !PASSWORD) {
-    console.error("Missing required environment variables. Check your .env file.");
+    console.error(
+      'Missing required environment variables. Check your .env file.'
+    );
     process.exit(1);
   }
 
@@ -63,7 +65,9 @@ import sodium from 'libsodium-wrappers';
     let keyBuffer = Buffer.from(keyString, 'utf8');
     // Verify key buffer length
     if (keyBuffer.length < 32) {
-      console.error(`Key buffer length is too short: ${keyBuffer.length} bytes`);
+      console.error(
+        `Key buffer length is too short: ${keyBuffer.length} bytes`
+      );
       throw new Error('Invalid encryption key length');
     }
 
@@ -90,9 +94,29 @@ import sodium from 'libsodium-wrappers';
       console.log(`Listening for UDP broadcasts on port ${port}`);
     });
 
+    // Variables for duplicate packet detection
+    let lastPacketData = null;
+    let lastPacketTime = 0;
+
     // Handle incoming messages
     udpSocket.on('message', async (msg, rinfo) => {
       try {
+        const now = Date.now();
+
+        // Check for duplicate packet
+        if (
+          lastPacketData &&
+          msg.equals(lastPacketData) &&
+          now - lastPacketTime < 750
+        ) {
+          console.log('Duplicate packet received, ignoring.');
+          return;
+        }
+
+        // Update last packet info
+        lastPacketData = Buffer.from(msg);
+        lastPacketTime = now;
+
         // Check if the message is at least 4 bytes long
         if (msg.length < 4) {
           return; // Ignore short messages
@@ -109,19 +133,22 @@ import sodium from 'libsodium-wrappers';
           const CIPHERTEXT = msg.slice(12);
 
           // Log packet details
-          console.log(`Received Version 2 packet from ${rinfo.address}:${rinfo.port}`);
-          console.log(`NONCE length: ${NONCE.length}`);
-          console.log(`NONCE: ${NONCE.toString('hex')}`);
-          console.log(`CIPHERTEXT length: ${CIPHERTEXT.length}`);
+          console.log(
+            `Received Version 2 packet from ${rinfo.address}:${rinfo.port}`
+          );
 
           // Verify lengths
           if (NONCE.length !== 8) {
-            console.error(`Invalid nonce length: expected 8, got ${NONCE.length}`);
+            console.error(
+              `Invalid nonce length: expected 8, got ${NONCE.length}`
+            );
             return;
           }
 
           if (CIPHERTEXT.length < 32) {
-            console.error('Ciphertext too short to contain encrypted data and authentication tag.');
+            console.error(
+              'Ciphertext too short to contain encrypted data and authentication tag.'
+            );
             return;
           }
 
@@ -138,7 +165,10 @@ import sodium from 'libsodium-wrappers';
             console.log('Decryption successful.');
           } catch (e) {
             // Decryption failed; likely not intended for us
-            console.log('Decryption failed; packet may not be intended for this device.');
+            console.log(
+              'Decryption failed; packet may not be intended for this device.',
+              e
+            );
             return;
           }
 
@@ -150,6 +180,12 @@ import sodium from 'libsodium-wrappers';
       } catch (error) {
         console.error('Error processing message:', error);
       }
+    });
+    // Handle graceful shutdown
+    process.on('SIGINT', () => {
+      console.log('Shutting down UDP listener...');
+      udpSocket.close();
+      process.exit();
     });
   });
 
@@ -167,19 +203,29 @@ import sodium from 'libsodium-wrappers';
     const EVENT = plaintextBuffer.slice(6, 14).toString('ascii').trim();
     const TIMESTAMP = plaintextBuffer.slice(14, 18).readUInt32BE(0);
 
-    console.log(`INTERCOM_ID: ${INTERCOM_ID}`);
-    console.log(`USERNAME (first 6 chars): ${USERNAME.substring(0, 6)}`);
-    console.log(`EVENT: ${EVENT}`);
-    console.log(`TIMESTAMP: ${new Date(TIMESTAMP * 1000).toISOString()}`);
-
     // Verify INTERCOM_ID matches the first 6 chars of your username
     if (INTERCOM_ID !== USERNAME.substring(0, 6)) {
       console.log('INTERCOM_ID does not match, ignoring packet');
       return;
     }
 
-    // Output event information
-    console.log(`Event: ${EVENT}`);
-    console.log(`Timestamp: ${new Date(TIMESTAMP * 1000).toISOString()}`);
+    // Handle different events
+    if (EVENT.toLowerCase() === 'motion') {
+      handleMotionEvent(TIMESTAMP);
+    } else {
+      handleDoorbellEvent(TIMESTAMP);
+    }
+  }
+
+  function handleMotionEvent(timestamp) {
+    console.log(
+      `Motion detected at ${new Date(timestamp * 1000).toISOString()}`
+    );
+    // Implement your motion event handling logic here
+  }
+
+  function handleDoorbellEvent(timestamp) {
+    console.log(`Doorbell rung at ${new Date(timestamp * 1000).toISOString()}`);
+    // Implement your doorbell event handling logic here
   }
 })();
